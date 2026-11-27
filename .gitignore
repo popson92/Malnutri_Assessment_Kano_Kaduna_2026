@@ -1,5 +1,6 @@
 node_modules
 dist
+tsconfig.tsbuildinfo
 .env
 .env.local
 .env.production
@@ -20,6 +21,7 @@ kano_kaduna_lga_boundary/
 *.prj
 *.cpg
 *.geojson
+!public/kano_kaduna_lga.geojson
 
 # IDE
 .vscode/

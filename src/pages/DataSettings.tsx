@@ -5,7 +5,7 @@ import { REFERENCE_MONTHS, DEFAULT_PARAMS } from '@/config/fieldMappings'
 import { SAMPLING_WEIGHTS } from '@/data/samplingFrame'
 
 export default function DataSettings() {
-  const { syncStatus } = useStore()
+  const { syncStatus, refreshData } = useStore()
   const dataMode = syncStatus.dataMode === 'development' ? 'dev' : syncStatus.dataMode
 
   return (
@@ -39,8 +39,14 @@ export default function DataSettings() {
               <div><span className="text-muted">Facility Submissions:</span><p className="font-medium">{syncStatus.facilityCount}</p></div>
               <div><span className="text-muted">Caregiver Submissions:</span><p className="font-medium">{syncStatus.caregiverCount}</p></div>
             </div>
+            <button
+              onClick={refreshData}
+              className="mt-2 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 transition-colors"
+            >
+              Refresh Data
+            </button>
             {syncStatus.error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+              <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-3">
                 <p className="text-red-800 font-medium">Sync Error</p>
                 <p className="text-red-600 mt-1">{syncStatus.error}</p>
               </div>
