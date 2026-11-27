@@ -11,7 +11,7 @@ interface Props {
 }
 
 const GEOJSON_PATH = '/kano_kaduna_lga.geojson'
-const PALETTE = ['#D6E8F4', '#8BB8D4', '#5A9BBF', '#2A6496', '#1E3A5F']
+const PALETTE = ['#E8F2FC', '#65A5DF', '#438AC9', '#3678B9', '#2A5F94']
 
 function getColor(value: number, max: number): string {
   if (max === 0 || value === 0) return '#F1F5F9'
@@ -77,7 +77,7 @@ export default function LgaChoropleth({ lgaData, metric }: Props) {
     layer.bindTooltip(tooltip)
     layer.on({
       mouseover: (e: LeafletMouseEvent) => {
-        e.target.setStyle({ weight: 2, color: '#2A6496', fillOpacity: 0.9 })
+        e.target.setStyle({ weight: 2, color: '#3678B9', fillOpacity: 0.9 })
         e.target.bringToFront()
       },
       mouseout: (e: LeafletMouseEvent) => {

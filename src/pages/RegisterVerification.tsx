@@ -80,11 +80,11 @@ export default function RegisterVerification() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={ratioDistribution}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="count" fill="#8BB8D4" name="Facilities" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#65A5DF" name="Facilities" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -94,7 +94,7 @@ export default function RegisterVerification() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={availDistribution}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
@@ -108,12 +108,12 @@ export default function RegisterVerification() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis type="number" dataKey="imam" name="IMAM" tick={{ fontSize: 10 }} label={{ value: 'IMAM Register', fontSize: 10, position: 'insideBottom', offset: -5 }} />
                 <YAxis type="number" dataKey="dhis2" name="DHIS2" tick={{ fontSize: 10 }} label={{ value: 'DHIS2', fontSize: 10, angle: -90, position: 'insideLeft' }} />
                 <ZAxis range={[30, 30]} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(value: number, name: string) => [value, name]} />
-                <Scatter data={imamVsDhis2} fill="#5A9BBF" />
+                <Scatter data={imamVsDhis2} fill="#438AC9" />
               </ScatterChart>
             </ResponsiveContainer>
           </div>

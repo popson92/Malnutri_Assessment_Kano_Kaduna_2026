@@ -9,7 +9,7 @@ const CAT_LABELS: Record<string, string> = {
   completed: 'Completed/Discharged', active: 'Active',
   defaulted_referred: 'Defaulted/Referred', substitute: 'Substitute',
 }
-const CAT_COLORS = ['#059669', '#5A9BBF', '#D97706', '#8BB8D4']
+const CAT_COLORS = ['#059669', '#438AC9', '#D97706', '#65A5DF']
 const CONTACT_COLORS: Record<string, string> = { yes: '#059669', no: '#DC2626', untraceable: '#94A3B8' }
 const BAR_COLORS = ['#none', '#distance', '#cost', '#stockout', '#staff', '#duties', '#belief', '#other']
 
@@ -117,11 +117,11 @@ export default function CaregiverInterviews() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={facilityCoverage}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="value" fill="#8BB8D4" name="Facilities" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="#65A5DF" name="Facilities" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -131,7 +131,7 @@ export default function CaregiverInterviews() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barrierCounts} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />

@@ -119,15 +119,15 @@ export default function Overview() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={d => d.slice(5)} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                   formatter={(value: number, name: string) => [value, name === 'cumulative' ? 'Cumulative' : 'Daily']}
                 />
-                <Line type="monotone" dataKey="cumulative" stroke="#2A6496" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="daily" stroke="#8BB8D4" strokeWidth={1.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="cumulative" stroke="#3678B9" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="daily" stroke="#65A5DF" strokeWidth={1.5} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -138,13 +138,13 @@ export default function Overview() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stateComparison} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="state" tick={{ fontSize: 12 }} width={70} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="target" fill="#E2E8F0" name="Target" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="target" fill="#DFE7F0" name="Target" radius={[0, 4, 4, 0]} />
                 <Bar dataKey="completed" fill="#059669" name="Completed" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="visited" fill="#8BB8D4" name="Visited" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="visited" fill="#65A5DF" name="Visited" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -181,11 +181,11 @@ export default function Overview() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topLgas} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="lgaLabel" tick={{ fontSize: 9 }} width={100} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="completed" fill="#5A9BBF" name="Completed" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="completed" fill="#3678B9" name="Completed" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

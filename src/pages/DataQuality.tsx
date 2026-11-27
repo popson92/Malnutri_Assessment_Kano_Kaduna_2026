@@ -130,7 +130,7 @@ export default function DataQuality() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byType} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} width={140} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
@@ -144,7 +144,7 @@ export default function DataQuality() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byTeam}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />

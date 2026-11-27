@@ -46,12 +46,12 @@ export default function FieldworkProgress() {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={d => d.slice(5)} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Line type="monotone" dataKey="cumulative" stroke="#2A6496" strokeWidth={2} name="Cumulative" />
-                <Line type="monotone" dataKey="daily" stroke="#8BB8D4" strokeWidth={1.5} dot={{ r: 3 }} name="Daily" />
+                <Line type="monotone" dataKey="cumulative" stroke="#3678B9" strokeWidth={2} name="Cumulative" />
+                <Line type="monotone" dataKey="daily" stroke="#65A5DF" strokeWidth={1.5} dot={{ r: 3 }} name="Daily" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -61,11 +61,11 @@ export default function FieldworkProgress() {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={outcomeData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="value" fill="#8BB8D4" radius={[0, 4, 4, 0]} name="Facilities" />
+                <Bar dataKey="value" fill="#65A5DF" radius={[0, 4, 4, 0]} name="Facilities" />
               </BarChart>
             </ResponsiveContainer>
           </div>

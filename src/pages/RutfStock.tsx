@@ -81,7 +81,7 @@ export default function RutfStock() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={discrepancyDistribution}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#DFE7F0" />
                 <XAxis dataKey="name" tick={{ fontSize: 9 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
