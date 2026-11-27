@@ -1,0 +1,36 @@
+node_modules
+dist
+.env
+.env.local
+.env.production
+.env.*.local
+.netlify
+*.log
+npm-debug.log*
+
+# Reference files - raw data, not for deployment
+reference_files/
+*.xlsx
+*.xls
+*.csv
+kano_kaduna_lga_boundary/
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.geojson
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude session files
+.claude/
