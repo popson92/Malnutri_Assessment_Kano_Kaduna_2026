@@ -1,5 +1,6 @@
 import type { FacilityRecord, CaregiverRecord, LgaSummary, State } from '@/types'
 import { LGA_MAPPINGS, SAMPLING_TARGETS, CAREGIVER_TARGET_PER_FACILITY, getLgaLabel } from '@/config/geo'
+import { getLgaTarget } from '@/data/samplingFrame'
 
 export function countByOutcome(facilities: FacilityRecord[]) {
   const counts: Record<string, number> = {}
@@ -96,16 +97,17 @@ export function lgaSummaries(facilities: FacilityRecord[], caregivers: Caregiver
   const map = new Map<string, LgaSummary>()
 
   for (const lga of LGA_MAPPINGS) {
+    const target = getLgaTarget(lga.koboCode)
     map.set(lga.koboCode, {
       state: lga.state,
       lga: lga.koboCode,
       lgaLabel: lga.label,
-      sampled: 0,
+      sampled: target,
       visited: 0,
       completed: 0,
       pending: 0,
       replacements: 0,
-      caregiverTarget: 0,
+      caregiverTarget: target * CAREGIVER_TARGET_PER_FACILITY,
       caregiverCompleted: 0,
       qualityFlags: 0,
     })

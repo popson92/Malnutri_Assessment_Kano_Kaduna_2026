@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState, Suspense, lazy } from 'react'
 import { PageHeader, KpiCard, SectionCard } from '@/components/ui'
 import { useStore } from '@/store'
 import { lgaSummaries } from '@/analytics/indicators'
 import { LGA_MAPPINGS, SAMPLING_TARGETS } from '@/config/geo'
+
+const LgaChoropleth = lazy(() => import('@/components/map/LgaChoropleth'))
 
 export default function GeographicOverview() {
   const { facilities, caregivers } = useStore()
@@ -14,6 +16,7 @@ export default function GeographicOverview() {
 
   const kanoLgas = lgaData.filter(l => l.state === 'kano').sort((a, b) => b.completed - a.completed)
   const kadunaLgas = lgaData.filter(l => l.state === 'kaduna').sort((a, b) => b.completed - a.completed)
+  const [mapMetric, setMapMetric] = useState<'completed' | 'visited' | 'sampled' | 'qualityFlags'>('completed')
 
   return (
     <div>
@@ -27,13 +30,21 @@ export default function GeographicOverview() {
       </div>
 
       <div className="mt-6">
-        <SectionCard title="Map View" subtitle="Interactive LGA choropleth map will render when boundary GeoJSON is loaded">
-          <div className="flex items-center justify-center h-64 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
-            <div className="text-center text-muted">
-              <p className="text-sm font-medium">Map loading...</p>
-              <p className="text-xs mt-1">Boundary GeoJSON will be processed from the shapefile during Phase 3</p>
-            </div>
+        <SectionCard title="LGA Coverage Map" subtitle="Choropleth showing fieldwork progress by LGA">
+          <div className="mb-3 flex gap-2">
+            {(['completed', 'visited', 'sampled', 'qualityFlags'] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => setMapMetric(m)}
+                className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${mapMetric === m ? 'bg-primary text-white' : 'bg-slate-100 text-muted hover:bg-slate-200'}`}
+              >
+                {m === 'qualityFlags' ? 'Flags' : m.charAt(0).toUpperCase() + m.slice(1)}
+              </button>
+            ))}
           </div>
+          <Suspense fallback={<div className="flex items-center justify-center h-80 bg-slate-50 rounded-lg"><p className="text-sm text-muted">Loading map...</p></div>}>
+            <LgaChoropleth lgaData={lgaData} metric={mapMetric} />
+          </Suspense>
         </SectionCard>
       </div>
 
@@ -44,9 +55,9 @@ export default function GeographicOverview() {
               <thead className="sticky top-0 bg-white">
                 <tr className="border-b text-left text-muted">
                   <th className="pb-2 pr-3">LGA</th>
+                  <th className="pb-2 pr-3 text-right">Target</th>
                   <th className="pb-2 pr-3 text-right">Visited</th>
                   <th className="pb-2 pr-3 text-right">Completed</th>
-                  <th className="pb-2 pr-3 text-right">Pending</th>
                   <th className="pb-2 pr-3 text-right">CG Done</th>
                   <th className="pb-2 text-right">Flags</th>
                 </tr>
@@ -55,9 +66,9 @@ export default function GeographicOverview() {
                 {kanoLgas.map(l => (
                   <tr key={l.lga} className="border-b border-border/50">
                     <td className="py-1.5 pr-3 font-medium">{l.lgaLabel}</td>
+                    <td className="py-1.5 pr-3 text-right text-muted">{l.sampled}</td>
                     <td className="py-1.5 pr-3 text-right">{l.visited}</td>
                     <td className="py-1.5 pr-3 text-right text-success">{l.completed}</td>
-                    <td className="py-1.5 pr-3 text-right">{l.pending}</td>
                     <td className="py-1.5 pr-3 text-right">{l.caregiverCompleted}</td>
                     <td className="py-1.5 text-right">{l.qualityFlags > 0 ? <span className="text-danger">{l.qualityFlags}</span> : '0'}</td>
                   </tr>
@@ -73,9 +84,9 @@ export default function GeographicOverview() {
               <thead className="sticky top-0 bg-white">
                 <tr className="border-b text-left text-muted">
                   <th className="pb-2 pr-3">LGA</th>
+                  <th className="pb-2 pr-3 text-right">Target</th>
                   <th className="pb-2 pr-3 text-right">Visited</th>
                   <th className="pb-2 pr-3 text-right">Completed</th>
-                  <th className="pb-2 pr-3 text-right">Pending</th>
                   <th className="pb-2 pr-3 text-right">CG Done</th>
                   <th className="pb-2 text-right">Flags</th>
                 </tr>
@@ -84,9 +95,9 @@ export default function GeographicOverview() {
                 {kadunaLgas.map(l => (
                   <tr key={l.lga} className="border-b border-border/50">
                     <td className="py-1.5 pr-3 font-medium">{l.lgaLabel}</td>
+                    <td className="py-1.5 pr-3 text-right text-muted">{l.sampled}</td>
                     <td className="py-1.5 pr-3 text-right">{l.visited}</td>
                     <td className="py-1.5 pr-3 text-right text-success">{l.completed}</td>
-                    <td className="py-1.5 pr-3 text-right">{l.pending}</td>
                     <td className="py-1.5 pr-3 text-right">{l.caregiverCompleted}</td>
                     <td className="py-1.5 text-right">{l.qualityFlags > 0 ? <span className="text-danger">{l.qualityFlags}</span> : '0'}</td>
                   </tr>

@@ -1,10 +1,30 @@
 import type { FacilityRecord, CaregiverRecord, State, VisitOutcome, MonthlyRecord, PatientRecord } from '@/types'
 import { LGA_MAPPINGS, SAMPLING_TARGETS } from '@/config/geo'
 import { REFERENCE_MONTHS } from '@/config/fieldMappings'
+import { LGA_ALLOCATIONS } from '@/data/samplingFrame'
 
-const rng = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
-const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
-const uuid = () => crypto.randomUUID()
+function mulberry32(seed: number) {
+  let s = seed | 0
+  return () => {
+    s = (s + 0x6D2B79F5) | 0
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+const rand = mulberry32(20261116)
+
+const rng = (min: number, max: number) => Math.floor(rand() * (max - min + 1)) + min
+const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)]
+const uuid = (() => {
+  let counter = 0
+  return () => {
+    counter++
+    const hex = (n: number, len: number) => Math.floor(rand() * 16 ** len).toString(16).padStart(len, '0')
+    return `${hex(0, 8)}-${hex(0, 4)}-4${hex(0, 3)}-${(8 + (counter % 4)).toString(16)}${hex(0, 3)}-${hex(0, 12)}`
+  }
+})()
 
 const teams = ['KN-01', 'KN-02', 'KN-03', 'KN-04', 'KN-05', 'KD-01', 'KD-02', 'KD-03', 'KD-04', 'KD-05']
 const supervisors = ['Sup A', 'Sup B', 'Sup C', 'Sup D', 'Sup E']
@@ -13,7 +33,7 @@ const outcomes: VisitOutcome[] = ['completed', 'completed', 'completed', 'comple
 
 function genMonthly(): MonthlyRecord[] {
   return REFERENCE_MONTHS.map((label, idx) => {
-    const avail = Math.random() > 0.15 ? 'yes' : Math.random() > 0.5 ? 'partial' : 'no'
+    const avail = rand() > 0.15 ? 'yes' : rand() > 0.5 ? 'partial' : 'no'
     const hasData = avail !== 'no'
     const newAdm = hasData ? rng(0, 15) : null
     const readm = hasData ? rng(0, 3) : null
@@ -35,8 +55,8 @@ function genMonthly(): MonthlyRecord[] {
       m_tout: hasData ? rng(0, 2) : null,
       m_nonresp: hasData ? rng(0, 1) : null,
       m_disc: hasData && rep != null && sumin != null ? rep - sumin : null,
-      m_stock: hasData ? (Math.random() > 0.85 ? 'yes' : 'no') : 'unknown',
-      m_card: hasData ? (Math.random() > 0.2 ? 'yes' : 'partial') : 'no',
+      m_stock: hasData ? (rand() > 0.85 ? 'yes' : 'no') : 'unknown',
+      m_card: hasData ? (rand() > 0.2 ? 'yes' : 'partial') : 'no',
       m_rrec: hasData ? rng(0, 300) : null,
       m_rdisp: hasData ? rng(0, 250) : null,
       m_imam: rep,
@@ -52,13 +72,13 @@ function genPatients(n: number): PatientRecord[] {
     r_id: `P-${rng(100, 999)}`,
     r_adate: `2026-${String(rng(1, 8)).padStart(2, '0')}-${String(rng(1, 28)).padStart(2, '0')}`,
     r_age: rng(6, 59),
-    r_sex: Math.random() > 0.5 ? 'm' as const : 'f' as const,
+    r_sex: rand() > 0.5 ? 'm' as const : 'f' as const,
     r_muac: parseFloat((rng(90, 130) / 10).toFixed(1)),
     r_whz: parseFloat((rng(-40, -15) / 10).toFixed(1)),
-    r_oed: Math.random() > 0.9 ? 'yes' : 'no',
-    r_sam: Math.random() > 0.2 ? 'Yes' : 'No',
+    r_oed: rand() > 0.9 ? 'yes' : 'no',
+    r_sam: rand() > 0.2 ? 'Yes' : 'No',
     r_mod: pick(['otp_rutf', 'otp_rutf', 'sc', 'counsel']),
-    r_rutf: Math.random() > 0.15 ? 'yes' : 'no',
+    r_rutf: rand() > 0.15 ? 'yes' : 'no',
     r_sach: rng(28, 196),
     r_wks: rng(4, 16),
     r_out: pick(['cured', 'cured', 'default', 'active', 'transfer']),
@@ -72,12 +92,25 @@ export function generateDevFacilities(): FacilityRecord[] {
   let id = 1
 
   for (const state of ['kano', 'kaduna'] as State[]) {
-    const stateLgas = LGA_MAPPINGS.filter(m => m.state === state)
-    const target = SAMPLING_TARGETS[state].facilities
-    const count = Math.min(target, Math.floor(target * 0.6) + rng(0, 10))
+    const stateAllocs = LGA_ALLOCATIONS.filter(a => a.state === state)
+    const lgaByKobo = new Map(LGA_MAPPINGS.filter(m => m.state === state).map(m => [m.koboCode, m]))
 
-    for (let i = 0; i < count; i++) {
-      const lga = pick(stateLgas)
+    for (const alloc of stateAllocs) {
+      const lgaMapping = lgaByKobo.get(alloc.koboCode)
+      if (!lgaMapping) continue
+      const lgaCount = Math.max(0, Math.floor(alloc.totalSelected * 0.6) + rng(0, Math.ceil(alloc.totalSelected * 0.3)))
+
+      const strataPool: string[] = [
+        ...Array(alloc.census).fill('sc_census'),
+        ...Array(alloc.certainty).fill('certainty'),
+        ...Array(alloc.randomReporting).fill('random_reporting'),
+        ...Array(alloc.randomNonReporting).fill('random_non_reporting'),
+      ]
+      if (strataPool.length === 0) strataPool.push('certainty')
+
+      for (let i = 0; i < lgaCount; i++) {
+      const lga = lgaMapping
+      const facStratum = pick(strataPool)
       const teamPrefix = state === 'kano' ? 'KN' : 'KD'
       const team = `${teamPrefix}-${String(rng(1, 5)).padStart(2, '0')}`
       const outcome = pick(outcomes)
@@ -117,7 +150,7 @@ export function generateDevFacilities(): FacilityRecord[] {
         a_sup: pick(supervisors),
         a_state: state,
         a_lga: lga.koboCode,
-        a_repl: Math.random() > 0.9 ? 'yes' : 'no',
+        a_repl: rand() > 0.9 ? 'yes' : 'no',
         a_repl_of: null,
         a_repl_why: null,
         a_fac: facCode,
@@ -126,20 +159,20 @@ export function generateDevFacilities(): FacilityRecord[] {
         pre_imam_name: `${lga.label} PHC ${i + 1}`,
         pre_dhis2_name: `${lga.label} PHC ${i + 1}`,
         pre_ward: `Ward ${rng(1, 5)}`,
-        pre_stratum: pick(strata),
-        pre_weight: parseFloat((Math.random() * 3 + 0.5).toFixed(2)),
+        pre_stratum: facStratum,
+        pre_weight: facStratum === 'random_non_reporting' ? (state === 'kaduna' ? 48.83 : 43.97) : facStratum === 'random_reporting' ? (state === 'kaduna' ? 6.08 : 7.68) : 1,
         pre_frame_no: String(rng(1, 500)),
-        pre_sc: Math.random() > 0.9 ? 'yes' : 'no',
+        pre_sc: rand() > 0.9 ? 'yes' : 'no',
         a_type: pick(['phc', 'phc', 'gh', 'chc']),
-        a_gps: `${9 + Math.random() * 3} ${7 + Math.random() * 2}`,
-        a_lat: 9 + Math.random() * 3,
-        a_lon: 7 + Math.random() * 2,
-        a_photo_taken: Math.random() > 0.1 ? 'Yes' : 'No',
+        a_gps: `${9 + rand() * 3} ${7 + rand() * 2}`,
+        a_lat: 9 + rand() * 3,
+        a_lon: 7 + rand() * 2,
+        a_photo_taken: rand() > 0.1 ? 'Yes' : 'No',
         a_lead: `Leader ${team}`,
         a_arrive: `${String(rng(8, 10)).padStart(2, '0')}:${String(rng(0, 59)).padStart(2, '0')}`,
         b1: isCompleted || outcome === 'partial' ? 'yes' : pick(['no', 'not_reached']),
         b2: isCompleted ? 'yes' : pick(['yes', 'no']),
-        b5: Math.random() > 0.9 ? 'yes' : 'no',
+        b5: rand() > 0.9 ? 'yes' : 'no',
         b9: rng(0, 5),
         b18: pick(['yes_sighted', 'yes_not_sighted', 'no']),
         b19: pick(['yes', 'no']),
@@ -172,7 +205,7 @@ export function generateDevFacilities(): FacilityRecord[] {
         e_acc: e_acc,
         e_courses: e_courses,
         e_unexp: e_unexp,
-        e_match: isCompleted ? (Math.random() > 0.3 ? 'yes' : 'no') : null,
+        e_match: isCompleted ? (rand() > 0.3 ? 'yes' : 'no') : null,
         e_phys: isCompleted ? rng(100, 2000) : null,
         h_gap: isCompleted && e_courses ? Math.round(totRep - e_courses) : null,
         h_gap_v: isCompleted && e_courses ? Math.round(totVer - e_courses) : null,
@@ -189,6 +222,7 @@ export function generateDevFacilities(): FacilityRecord[] {
         patientRecords: patients,
       })
     }
+    }
   }
 
   return facilities
@@ -202,15 +236,21 @@ export function generateDevCaregivers(): CaregiverRecord[] {
   const barriers = ['none', 'distance', 'cost', 'stockout', 'staff', 'duties'] as const
 
   for (const state of ['kano', 'kaduna'] as State[]) {
-    const stateLgas = LGA_MAPPINGS.filter(m => m.state === state)
-    const count = state === 'kano' ? rng(80, 120) : rng(100, 150)
+    const stateAllocs = LGA_ALLOCATIONS.filter(a => a.state === state)
+    const lgaByKobo = new Map(LGA_MAPPINGS.filter(m => m.state === state).map(m => [m.koboCode, m]))
+
+    for (const alloc of stateAllocs) {
+      const lgaMapping = lgaByKobo.get(alloc.koboCode)
+      if (!lgaMapping) continue
+      const cgPerLga = alloc.totalSelected * 3
+      const count = Math.max(0, Math.floor(cgPerLga * 0.5) + rng(0, Math.ceil(cgPerLga * 0.3)))
 
     for (let i = 0; i < count; i++) {
-      const lga = pick(stateLgas)
+      const lga = lgaMapping
       const teamPrefix = state === 'kano' ? 'KN' : 'KD'
       const facCode = `${state.substring(0, 2).toUpperCase()}_${lga.koboCode}_${String(rng(1, 20)).padStart(3, '0')}`
-      const contact = pick(contacts)
-      const consent = contact === 'yes' ? (Math.random() > 0.05 ? 'yes' : 'no') as const : null
+      const contact: 'yes' | 'no' | 'untraceable' = pick(contacts)
+      const consent: 'yes' | 'no' | null = contact === 'yes' ? (rand() > 0.05 ? 'yes' : 'no') : null
 
       caregivers.push({
         _id: id++,
@@ -237,20 +277,21 @@ export function generateDevCaregivers(): CaregiverRecord[] {
         m_edu: consent === 'yes' ? pick(['none', 'quranic', 'primary', 'secondary']) : null,
         m_u5: consent === 'yes' ? rng(1, 5) : null,
         ch_age: consent === 'yes' ? rng(6, 59) : null,
-        ch_sex: consent === 'yes' ? (Math.random() > 0.5 ? 'm' : 'f') : null,
+        ch_sex: consent === 'yes' ? (rand() > 0.5 ? 'm' : 'f') : null,
         ch_adm_date: consent === 'yes' ? `2026-${String(rng(1, 8)).padStart(2, '0')}-${String(rng(1, 28)).padStart(2, '0')}` : null,
         ch_admtype: consent === 'yes' ? pick(['new', 'readmission']) : null,
         ch_ref: consent === 'yes' ? pick(['facility', 'chv', 'self']) : null,
         ch_where: consent === 'yes' ? pick(['otp', 'otp', 'sc', 'both']) : null,
         ch_disch: consent === 'yes' ? pick(['active', 'cured', 'defaulted']) : null,
-        c_attend: consent === 'yes' ? (Math.random() > 0.08 ? 'yes' : 'no') : null,
+        c_attend: consent === 'yes' ? (rand() > 0.08 ? 'yes' : 'no') : null,
         c_cont: consent === 'yes' ? pick(['yes', 'yes', 'interrupted', 'no']) : null,
         c_ref_completed: null,
         c_bar: consent === 'yes' ? pick(barriers) : null,
         c_cost: consent === 'yes' ? rng(0, 5000) : null,
-        c_untr: consent === 'yes' ? (Math.random() > 0.9 ? 'yes' : 'no') : null,
+        c_untr: consent === 'yes' ? (rand() > 0.9 ? 'yes' : 'no') : null,
         c_muac: null,
       })
+    }
     }
   }
 

@@ -1,10 +1,11 @@
 import { PageHeader, SectionCard } from '@/components/ui'
 import { useStore } from '@/store'
-import { SAMPLING_TARGETS } from '@/config/geo'
+import { SAMPLING_TARGETS, STRATUM_TARGETS } from '@/config/geo'
 import { REFERENCE_MONTHS, DEFAULT_PARAMS } from '@/config/fieldMappings'
+import { SAMPLING_WEIGHTS } from '@/data/samplingFrame'
 
 export default function DataSettings() {
-  const { syncStatus } = useStore()
+  const { syncStatus, refreshData } = useStore()
   const dataMode = syncStatus.dataMode === 'development' ? 'dev' : syncStatus.dataMode
 
   return (
@@ -38,8 +39,14 @@ export default function DataSettings() {
               <div><span className="text-muted">Facility Submissions:</span><p className="font-medium">{syncStatus.facilityCount}</p></div>
               <div><span className="text-muted">Caregiver Submissions:</span><p className="font-medium">{syncStatus.caregiverCount}</p></div>
             </div>
+            <button
+              onClick={refreshData}
+              className="mt-2 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 transition-colors"
+            >
+              Refresh Data
+            </button>
             {syncStatus.error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+              <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-3">
                 <p className="text-red-800 font-medium">Sync Error</p>
                 <p className="text-red-600 mt-1">{syncStatus.error}</p>
               </div>
@@ -82,6 +89,74 @@ export default function DataSettings() {
           </div>
         </SectionCard>
 
+        <SectionCard title="Stratum Allocation">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b text-left text-muted">
+                  <th className="pb-2 pr-4">Stratum</th>
+                  <th className="pb-2 pr-4 text-right">Kano</th>
+                  <th className="pb-2 pr-4 text-right">Kaduna</th>
+                  <th className="pb-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">SC Census</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.sc_census.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.sc_census.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.sc_census.total}</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">Certainty</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.certainty.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.certainty.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.certainty.total}</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">Random Reporting</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_reporting.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_reporting.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.random_reporting.total}</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">Random Non-Reporting</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_non_reporting.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_non_reporting.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.random_non_reporting.total}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Sampling Weights">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b text-left text-muted">
+                  <th className="pb-2 pr-3">State</th>
+                  <th className="pb-2 pr-3">Stratum</th>
+                  <th className="pb-2 pr-3 text-right">Frame</th>
+                  <th className="pb-2 pr-3 text-right">Sample</th>
+                  <th className="pb-2 text-right">Weight</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SAMPLING_WEIGHTS.map((w, i) => (
+                  <tr key={i} className="border-b border-border/50">
+                    <td className="py-1.5 pr-3 capitalize">{w.state}</td>
+                    <td className="py-1.5 pr-3">{w.stratum}</td>
+                    <td className="py-1.5 pr-3 text-right">{w.frameN}</td>
+                    <td className="py-1.5 pr-3 text-right">{w.sampleN}</td>
+                    <td className="py-1.5 text-right font-medium">{w.designWeight.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+
         <SectionCard title="RUTF Parameters">
           <div className="space-y-2 text-xs">
             <div className="flex justify-between py-1 border-b border-border/50">
@@ -94,7 +169,7 @@ export default function DataSettings() {
             </div>
             <div className="flex justify-between py-1 border-b border-border/50">
               <span className="text-muted">Wastage allowance</span>
-              <span className="font-medium">{(DEFAULT_PARAMS.wastageRate * 100).toFixed(0)}%</span>
+              <span className="font-medium">{(DEFAULT_PARAMS.wastageAllowance * 100).toFixed(0)}%</span>
             </div>
           </div>
         </SectionCard>
