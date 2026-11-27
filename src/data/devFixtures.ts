@@ -1,6 +1,7 @@
 import type { FacilityRecord, CaregiverRecord, State, VisitOutcome, MonthlyRecord, PatientRecord } from '@/types'
 import { LGA_MAPPINGS, SAMPLING_TARGETS } from '@/config/geo'
 import { REFERENCE_MONTHS } from '@/config/fieldMappings'
+import { LGA_ALLOCATIONS } from '@/data/samplingFrame'
 
 const rng = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
@@ -72,12 +73,25 @@ export function generateDevFacilities(): FacilityRecord[] {
   let id = 1
 
   for (const state of ['kano', 'kaduna'] as State[]) {
-    const stateLgas = LGA_MAPPINGS.filter(m => m.state === state)
-    const target = SAMPLING_TARGETS[state].facilities
-    const count = Math.min(target, Math.floor(target * 0.6) + rng(0, 10))
+    const stateAllocs = LGA_ALLOCATIONS.filter(a => a.state === state)
+    const lgaByKobo = new Map(LGA_MAPPINGS.filter(m => m.state === state).map(m => [m.koboCode, m]))
 
-    for (let i = 0; i < count; i++) {
-      const lga = pick(stateLgas)
+    for (const alloc of stateAllocs) {
+      const lgaMapping = lgaByKobo.get(alloc.koboCode)
+      if (!lgaMapping) continue
+      const lgaCount = Math.max(0, Math.floor(alloc.totalSelected * 0.6) + rng(0, Math.ceil(alloc.totalSelected * 0.3)))
+
+      const strataPool: string[] = [
+        ...Array(alloc.census).fill('sc_census'),
+        ...Array(alloc.certainty).fill('certainty'),
+        ...Array(alloc.randomReporting).fill('random_reporting'),
+        ...Array(alloc.randomNonReporting).fill('random_non_reporting'),
+      ]
+      if (strataPool.length === 0) strataPool.push('certainty')
+
+      for (let i = 0; i < lgaCount; i++) {
+      const lga = lgaMapping
+      const facStratum = pick(strataPool)
       const teamPrefix = state === 'kano' ? 'KN' : 'KD'
       const team = `${teamPrefix}-${String(rng(1, 5)).padStart(2, '0')}`
       const outcome = pick(outcomes)
@@ -126,8 +140,8 @@ export function generateDevFacilities(): FacilityRecord[] {
         pre_imam_name: `${lga.label} PHC ${i + 1}`,
         pre_dhis2_name: `${lga.label} PHC ${i + 1}`,
         pre_ward: `Ward ${rng(1, 5)}`,
-        pre_stratum: pick(strata),
-        pre_weight: parseFloat((Math.random() * 3 + 0.5).toFixed(2)),
+        pre_stratum: facStratum,
+        pre_weight: facStratum === 'random_non_reporting' ? (state === 'kaduna' ? 48.83 : 43.97) : facStratum === 'random_reporting' ? (state === 'kaduna' ? 6.08 : 7.68) : 1,
         pre_frame_no: String(rng(1, 500)),
         pre_sc: Math.random() > 0.9 ? 'yes' : 'no',
         a_type: pick(['phc', 'phc', 'gh', 'chc']),
@@ -189,6 +203,7 @@ export function generateDevFacilities(): FacilityRecord[] {
         patientRecords: patients,
       })
     }
+    }
   }
 
   return facilities
@@ -202,11 +217,17 @@ export function generateDevCaregivers(): CaregiverRecord[] {
   const barriers = ['none', 'distance', 'cost', 'stockout', 'staff', 'duties'] as const
 
   for (const state of ['kano', 'kaduna'] as State[]) {
-    const stateLgas = LGA_MAPPINGS.filter(m => m.state === state)
-    const count = state === 'kano' ? rng(80, 120) : rng(100, 150)
+    const stateAllocs = LGA_ALLOCATIONS.filter(a => a.state === state)
+    const lgaByKobo = new Map(LGA_MAPPINGS.filter(m => m.state === state).map(m => [m.koboCode, m]))
+
+    for (const alloc of stateAllocs) {
+      const lgaMapping = lgaByKobo.get(alloc.koboCode)
+      if (!lgaMapping) continue
+      const cgPerLga = alloc.totalSelected * 3
+      const count = Math.max(0, Math.floor(cgPerLga * 0.5) + rng(0, Math.ceil(cgPerLga * 0.3)))
 
     for (let i = 0; i < count; i++) {
-      const lga = pick(stateLgas)
+      const lga = lgaMapping
       const teamPrefix = state === 'kano' ? 'KN' : 'KD'
       const facCode = `${state.substring(0, 2).toUpperCase()}_${lga.koboCode}_${String(rng(1, 20)).padStart(3, '0')}`
       const contact: 'yes' | 'no' | 'untraceable' = pick(contacts)
@@ -251,6 +272,7 @@ export function generateDevCaregivers(): CaregiverRecord[] {
         c_untr: consent === 'yes' ? (Math.random() > 0.9 ? 'yes' : 'no') : null,
         c_muac: null,
       })
+    }
     }
   }
 

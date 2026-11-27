@@ -44,9 +44,9 @@ export default function GeographicOverview() {
               <thead className="sticky top-0 bg-white">
                 <tr className="border-b text-left text-muted">
                   <th className="pb-2 pr-3">LGA</th>
+                  <th className="pb-2 pr-3 text-right">Target</th>
                   <th className="pb-2 pr-3 text-right">Visited</th>
                   <th className="pb-2 pr-3 text-right">Completed</th>
-                  <th className="pb-2 pr-3 text-right">Pending</th>
                   <th className="pb-2 pr-3 text-right">CG Done</th>
                   <th className="pb-2 text-right">Flags</th>
                 </tr>
@@ -55,9 +55,9 @@ export default function GeographicOverview() {
                 {kanoLgas.map(l => (
                   <tr key={l.lga} className="border-b border-border/50">
                     <td className="py-1.5 pr-3 font-medium">{l.lgaLabel}</td>
+                    <td className="py-1.5 pr-3 text-right text-muted">{l.sampled}</td>
                     <td className="py-1.5 pr-3 text-right">{l.visited}</td>
                     <td className="py-1.5 pr-3 text-right text-success">{l.completed}</td>
-                    <td className="py-1.5 pr-3 text-right">{l.pending}</td>
                     <td className="py-1.5 pr-3 text-right">{l.caregiverCompleted}</td>
                     <td className="py-1.5 text-right">{l.qualityFlags > 0 ? <span className="text-danger">{l.qualityFlags}</span> : '0'}</td>
                   </tr>
@@ -73,9 +73,9 @@ export default function GeographicOverview() {
               <thead className="sticky top-0 bg-white">
                 <tr className="border-b text-left text-muted">
                   <th className="pb-2 pr-3">LGA</th>
+                  <th className="pb-2 pr-3 text-right">Target</th>
                   <th className="pb-2 pr-3 text-right">Visited</th>
                   <th className="pb-2 pr-3 text-right">Completed</th>
-                  <th className="pb-2 pr-3 text-right">Pending</th>
                   <th className="pb-2 pr-3 text-right">CG Done</th>
                   <th className="pb-2 text-right">Flags</th>
                 </tr>
@@ -84,9 +84,9 @@ export default function GeographicOverview() {
                 {kadunaLgas.map(l => (
                   <tr key={l.lga} className="border-b border-border/50">
                     <td className="py-1.5 pr-3 font-medium">{l.lgaLabel}</td>
+                    <td className="py-1.5 pr-3 text-right text-muted">{l.sampled}</td>
                     <td className="py-1.5 pr-3 text-right">{l.visited}</td>
                     <td className="py-1.5 pr-3 text-right text-success">{l.completed}</td>
-                    <td className="py-1.5 pr-3 text-right">{l.pending}</td>
                     <td className="py-1.5 pr-3 text-right">{l.caregiverCompleted}</td>
                     <td className="py-1.5 text-right">{l.qualityFlags > 0 ? <span className="text-danger">{l.qualityFlags}</span> : '0'}</td>
                   </tr>

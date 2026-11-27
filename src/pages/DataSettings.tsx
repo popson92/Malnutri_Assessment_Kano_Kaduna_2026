@@ -1,7 +1,8 @@
 import { PageHeader, SectionCard } from '@/components/ui'
 import { useStore } from '@/store'
-import { SAMPLING_TARGETS } from '@/config/geo'
+import { SAMPLING_TARGETS, STRATUM_TARGETS } from '@/config/geo'
 import { REFERENCE_MONTHS, DEFAULT_PARAMS } from '@/config/fieldMappings'
+import { SAMPLING_WEIGHTS } from '@/data/samplingFrame'
 
 export default function DataSettings() {
   const { syncStatus } = useStore()
@@ -77,6 +78,74 @@ export default function DataSettings() {
                   <td className="py-2 pr-4 text-right">{SAMPLING_TARGETS.kaduna.facilities * 3}</td>
                   <td className="py-2 text-right font-medium">{SAMPLING_TARGETS.total.facilities * 3}</td>
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Stratum Allocation">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b text-left text-muted">
+                  <th className="pb-2 pr-4">Stratum</th>
+                  <th className="pb-2 pr-4 text-right">Kano</th>
+                  <th className="pb-2 pr-4 text-right">Kaduna</th>
+                  <th className="pb-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">SC Census</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.sc_census.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.sc_census.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.sc_census.total}</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">Certainty</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.certainty.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.certainty.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.certainty.total}</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">Random Reporting</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_reporting.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_reporting.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.random_reporting.total}</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-medium">Random Non-Reporting</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_non_reporting.kano}</td>
+                  <td className="py-2 pr-4 text-right">{STRATUM_TARGETS.random_non_reporting.kaduna}</td>
+                  <td className="py-2 text-right font-medium">{STRATUM_TARGETS.random_non_reporting.total}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Sampling Weights">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b text-left text-muted">
+                  <th className="pb-2 pr-3">State</th>
+                  <th className="pb-2 pr-3">Stratum</th>
+                  <th className="pb-2 pr-3 text-right">Frame</th>
+                  <th className="pb-2 pr-3 text-right">Sample</th>
+                  <th className="pb-2 text-right">Weight</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SAMPLING_WEIGHTS.map((w, i) => (
+                  <tr key={i} className="border-b border-border/50">
+                    <td className="py-1.5 pr-3 capitalize">{w.state}</td>
+                    <td className="py-1.5 pr-3">{w.stratum}</td>
+                    <td className="py-1.5 pr-3 text-right">{w.frameN}</td>
+                    <td className="py-1.5 pr-3 text-right">{w.sampleN}</td>
+                    <td className="py-1.5 text-right font-medium">{w.designWeight.toFixed(2)}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
