@@ -45,25 +45,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         lastSync: new Date().toISOString(),
         connected: true,
         error: null,
+        dataMode: DATA_MODE,
       }))
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch data'
       setSyncStatus(prev => ({
         ...prev,
         connected: false,
-        error: err instanceof Error ? err.message : 'Failed to fetch data',
+        error: `KoboToolbox connection failed: ${errorMsg}`,
+        dataMode: DATA_MODE,
       }))
-      if (allFacilities.length === 0) {
-        const fac = generateDevFacilities()
-        const cg = generateDevCaregivers()
-        setAllFacilities(fac)
-        setAllCaregivers(cg)
-        setSyncStatus(prev => ({
-          ...prev,
-          facilityCount: fac.length,
-          caregiverCount: cg.length,
-          dataMode: 'development',
-        }))
-      }
     }
   }, [])
 
@@ -72,7 +63,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const setFilter = useCallback((key: keyof Filters, value: string | null) => {
     setFilters(prev => {
       const next = { ...prev, [key]: value }
-      if (key === 'state') next.lga = null
+      if (key === 'state') { next.lga = null; next.facility = null }
+      if (key === 'lga') { next.facility = null }
       return next
     })
   }, [])
@@ -83,6 +75,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     let result = allFacilities
     if (filters.state) result = result.filter(f => f.a_state === filters.state)
     if (filters.lga) result = result.filter(f => f.a_lga === filters.lga)
+    if (filters.facility) result = result.filter(f => f.a_fac === filters.facility)
     if (filters.team) result = result.filter(f => f.a_team === filters.team)
     if (filters.stratum) result = result.filter(f => f.pre_stratum === filters.stratum)
     if (filters.outcome) result = result.filter(f => f.a_outcome === filters.outcome)
@@ -93,6 +86,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     let result = allCaregivers
     if (filters.state) result = result.filter(c => c.a_state === filters.state)
     if (filters.lga) result = result.filter(c => c.a_lga === filters.lga)
+    if (filters.facility) result = result.filter(c => c.a_fac === filters.facility)
     if (filters.team) result = result.filter(c => c.a_team === filters.team)
     return result
   }, [allCaregivers, filters])

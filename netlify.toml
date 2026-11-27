@@ -5,6 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  VITE_DATA_MODE = "testing"
 
 [functions]
   node_bundler = "esbuild"

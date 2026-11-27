@@ -10,6 +10,7 @@ type View = 'action' | 'all-flags'
 export default function IssuesFollowUp() {
   const { facilities } = useStore()
   const [view, setView] = useState<View>('action')
+  const [selectedFlag, setSelectedFlag] = useState<QualityFlag | null>(null)
 
   const completed = useMemo(() => completedFacilities(facilities), [facilities])
   const followUp = useMemo(() => facilitiesRequiringFollowUp(facilities), [facilities])
@@ -188,7 +189,7 @@ export default function IssuesFollowUp() {
                 </thead>
                 <tbody>
                   {qualityFlags.map(f => (
-                    <tr key={f.id} className="border-b border-border/50">
+                    <tr key={f.id} className="border-b border-border/50 cursor-pointer hover:bg-pale-blue/40 transition-colors" onClick={() => setSelectedFlag(f)}>
                       <td className="py-2 pr-3"><span className="font-mono text-[10px]">{f.ruleId}</span></td>
                       <td className="py-2 pr-3">
                         <span className={f.severity === 'critical' ? 'badge-danger' : f.severity === 'warning' ? 'badge-warning' : 'badge-info'}>
@@ -206,6 +207,49 @@ export default function IssuesFollowUp() {
               </table>
             </div>
           </SectionCard>
+
+          {selectedFlag && (
+            <div className="mt-4 rounded-xl border border-primary/30 bg-white shadow-lg overflow-hidden">
+              <div className="flex items-center justify-between bg-pale-blue px-4 py-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-ink">{selectedFlag.facilityName}</h3>
+                  <p className="text-[11px] text-muted">{getLgaLabel(selectedFlag.lga)} &middot; {selectedFlag.state} &middot; {selectedFlag.team}</p>
+                </div>
+                <button onClick={() => setSelectedFlag(null)} className="rounded-lg p-1.5 hover:bg-white/60 text-muted">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="rounded-lg border border-border/60 p-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="font-mono text-[10px] text-muted mr-2">{selectedFlag.ruleId}</span>
+                      <span className={selectedFlag.severity === 'critical' ? 'badge-danger' : selectedFlag.severity === 'warning' ? 'badge-warning' : 'badge-info'}>{selectedFlag.severity}</span>
+                    </div>
+                    {selectedFlag.monthLabel && <span className="text-[11px] text-muted">{selectedFlag.monthLabel}</span>}
+                  </div>
+                  <p className="mt-2 text-xs text-ink">{selectedFlag.explanation}</p>
+                  <div className="mt-2 rounded bg-blue-50 px-3 py-2">
+                    <p className="text-[11px] text-blue-800"><strong>Recommendation:</strong> {selectedFlag.recommendation}</p>
+                  </div>
+                </div>
+                {qualityFlags.filter(f => f.facilityCode === selectedFlag.facilityCode && f.id !== selectedFlag.id).length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-muted mb-1">Other flags for this facility</p>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {qualityFlags.filter(f => f.facilityCode === selectedFlag.facilityCode && f.id !== selectedFlag.id).map(f => (
+                        <div key={f.id} className="flex items-center gap-2 rounded border border-border/40 px-2.5 py-1.5 text-[11px] cursor-pointer hover:bg-pale-blue/30" onClick={() => setSelectedFlag(f)}>
+                          <span className="font-mono text-[10px] text-muted">{f.ruleId}</span>
+                          <span className={f.severity === 'critical' ? 'badge-danger' : f.severity === 'warning' ? 'badge-warning' : 'badge-info'}>{f.severity}</span>
+                          <span className="flex-1 truncate text-muted">{f.explanation}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -100,14 +100,40 @@ export function PageShell() {
           <FilterBar />
         </div>
 
-        {/* Data mode banner */}
-        {modeBanner && (
+        {/* Connection error banner */}
+        {syncStatus.error && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2 bg-red-50 text-red-700 border-b border-red-200">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+              <span className="text-[11px] font-medium">{syncStatus.error}</span>
+            </div>
+            <button
+              onClick={refreshData}
+              className="rounded border border-red-300 bg-white px-2.5 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Data mode / connection status banner */}
+        {modeBanner && !syncStatus.error && (
           <div className={`px-4 py-1 text-center text-[11px] font-medium ${
             syncStatus.dataMode === 'development'
               ? 'bg-amber-50 text-amber-700 border-b border-amber-200'
               : 'bg-blue-50 text-blue-700 border-b border-blue-200'
           }`}>
-            {bannerText}
+            {syncStatus.connected && syncStatus.dataMode !== 'development' ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                KOBO CONNECTED — Pilot/Test Data
+                {syncStatus.facilityCount > 0 && (
+                  <span className="text-blue-500">({syncStatus.facilityCount} facility, {syncStatus.caregiverCount} caregiver submissions)</span>
+                )}
+              </span>
+            ) : (
+              bannerText
+            )}
           </div>
         )}
 

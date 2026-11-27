@@ -4,6 +4,7 @@ import type { FacilityRecord, CaregiverRecord, SyncStatus, DataMode, State } fro
 export interface Filters {
   state: State | null
   lga: string | null
+  facility: string | null
   team: string | null
   stratum: string | null
   outcome: string | null
@@ -26,6 +27,7 @@ export interface StoreState {
 const defaultFilters: Filters = {
   state: null,
   lga: null,
+  facility: null,
   team: null,
   stratum: null,
   outcome: null,
