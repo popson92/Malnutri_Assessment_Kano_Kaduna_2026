@@ -1,5 +1,4 @@
 import type { FacilityRecord, CaregiverRecord, MonthlyRecord, PatientRecord } from '@/types'
-import { FACILITY_FIELDS, CAREGIVER_FIELDS, REFERENCE_MONTHS, type FieldMapping } from '@/config/fieldMappings'
 
 const PROXY_URL = '/.netlify/functions/kobo-proxy'
 
@@ -9,22 +8,8 @@ interface KoboResponse {
   results: Record<string, unknown>[]
 }
 
-function resolve(row: Record<string, unknown>, mapping: FieldMapping): unknown {
-  const version = String(row._version ?? '')
-  const path = version.startsWith('v3') ? mapping.v3 : version.startsWith('v4') ? mapping.v4 : mapping.v5
-  if (!path) return undefined
-
-  const parts = path.split('/')
-  let val: unknown = row
-  for (const p of parts) {
-    if (val == null || typeof val !== 'object') return undefined
-    val = (val as Record<string, unknown>)[p]
-  }
-  return val
-}
-
 function num(v: unknown): number | null {
-  if (v == null || v === '') return null
+  if (v == null || v === '' || v === 'NaN') return null
   const n = Number(v)
   return isNaN(n) ? null : n
 }
@@ -33,196 +18,198 @@ function str(v: unknown): string {
   return v == null ? '' : String(v)
 }
 
+function mapMonthly(raw: Record<string, unknown>): MonthlyRecord {
+  const g = (key: string) => raw[`c/c_month/${key}`]
+  return {
+    m_idx: num(g('m_idx')) ?? 0,
+    m_label: str(g('m_label')),
+    m_avail: (str(g('m_avail')) || 'no') as 'yes' | 'no' | 'partial',
+    m_rep: num(g('m_rep')),
+    m_new: num(g('m_new')),
+    m_readm: num(g('m_readm')),
+    m_tin: num(g('m_tin')),
+    m_sumin: num(g('m_sumin')),
+    m_cured: num(g('m_cured')),
+    m_def: num(g('m_def')),
+    m_died: num(g('m_died')),
+    m_tout: num(g('m_tout')),
+    m_nonresp: num(g('m_nonresp')),
+    m_disc: num(g('m_disc')),
+    m_stock: (str(g('m_stock')) || 'unknown') as 'yes' | 'no' | 'unknown',
+    m_card: (str(g('m_card')) || 'no') as 'yes' | 'no' | 'partial',
+    m_rrec: num(g('m_rrec')),
+    m_rdisp: num(g('m_rdisp')),
+    m_imam: num(g('m_imam')),
+    m_dhis2: num(g('m_dhis2_n')),
+  }
+}
+
+function mapPatient(raw: Record<string, unknown>): PatientRecord {
+  const g = (key: string) => raw[`d/d_rec/${key}`]
+  return {
+    r_sn: num(g('r_sn')) ?? 0,
+    r_id: str(g('r_id')),
+    r_adate: str(g('r_adate')) || null,
+    r_age: num(g('r_age')),
+    r_sex: (str(g('r_sex')) || null) as 'm' | 'f' | null,
+    r_muac: num(g('r_muac')),
+    r_whz: num(g('r_whz')),
+    r_oed: str(g('r_oed')) || null,
+    r_sam: str(g('r_sam')),
+    r_mod: str(g('r_mod')),
+    r_rutf: str(g('r_rutf')),
+    r_sach: num(g('r_sach')),
+    r_wks: num(g('r_wks')),
+    r_out: str(g('r_out')),
+    r_compl: str(g('r_compl')),
+    r_class: (str(g('r_class')) || 'unverifiable') as PatientRecord['r_class'],
+  }
+}
+
 function mapFacility(raw: Record<string, unknown>): FacilityRecord {
-  const get = (canonical: string) => {
-    const mapping = FACILITY_FIELDS.find(f => f.canonical === canonical)
-    return mapping ? resolve(raw, mapping) : raw[canonical]
-  }
+  const monthlyArr = (raw['c/c_month'] ?? []) as Record<string, unknown>[]
+  const monthlyData = monthlyArr.map(mapMonthly)
 
-  const monthlyData: MonthlyRecord[] = REFERENCE_MONTHS.map((label, idx) => {
-    const prefix = `c/c_m${idx + 1}`
-    const getM = (field: string) => raw[`${prefix}_${field}`] ?? raw[`c_m${idx + 1}_${field}`]
-    const avail = str(getM('avail') ?? 'no') as 'yes' | 'no' | 'partial'
-    return {
-      m_idx: idx + 1,
-      m_label: label,
-      m_avail: avail,
-      m_rep: num(getM('rep')),
-      m_new: num(getM('new')),
-      m_readm: num(getM('readm')),
-      m_tin: num(getM('tin')),
-      m_sumin: num(getM('sumin')),
-      m_cured: num(getM('cured')),
-      m_def: num(getM('def')),
-      m_died: num(getM('died')),
-      m_tout: num(getM('tout')),
-      m_nonresp: num(getM('nonresp')),
-      m_disc: num(getM('disc')),
-      m_stock: (str(getM('stock')) || 'unknown') as 'yes' | 'no' | 'unknown',
-      m_card: (str(getM('card')) || 'no') as 'yes' | 'no' | 'partial',
-      m_rrec: num(getM('rrec')),
-      m_rdisp: num(getM('rdisp')),
-      m_imam: num(getM('imam')),
-      m_dhis2: num(getM('dhis2')),
-    }
-  })
+  const patientArr = (raw['d/d_rec'] ?? []) as Record<string, unknown>[]
+  const patientRecords = patientArr.map(mapPatient)
 
-  const patientRecords: PatientRecord[] = []
-  const dRev = num(get('d_rev')) ?? 0
-  for (let i = 1; i <= dRev && i <= 10; i++) {
-    const getP = (field: string) => raw[`d/d_r${i}_${field}`] ?? raw[`d_r${i}_${field}`]
-    patientRecords.push({
-      r_sn: i,
-      r_id: str(getP('id')),
-      r_adate: str(getP('adate')) || null,
-      r_age: num(getP('age')),
-      r_sex: (str(getP('sex')) || null) as 'm' | 'f' | null,
-      r_muac: num(getP('muac')),
-      r_whz: num(getP('whz')),
-      r_oed: str(getP('oed')) || null,
-      r_sam: str(getP('sam')),
-      r_mod: str(getP('mod')),
-      r_rutf: str(getP('rutf')),
-      r_sach: num(getP('sach')),
-      r_wks: num(getP('wks')),
-      r_out: str(getP('out')),
-      r_compl: str(getP('compl')),
-      r_class: (str(getP('class')) || 'unverifiable') as PatientRecord['r_class'],
-    })
-  }
-
-  const state = str(get('a_state')).toLowerCase() as 'kano' | 'kaduna'
+  const state = str(raw['a/a_state']).toLowerCase() as 'kano' | 'kaduna'
+  const hmech = raw['h/h_mech']
+  const mechArr = Array.isArray(hmech) ? hmech as string[] : str(hmech).split(' ').filter(Boolean)
 
   return {
     _id: Number(raw._id) || 0,
     _uuid: str(raw._uuid),
     _submission_time: str(raw._submission_time),
-    _version: str(raw._version),
+    _version: str(raw.__version__ ?? raw._version),
     start: str(raw.start),
     end: str(raw.end),
     today: str(raw.today),
-    a_date: str(get('a_date')),
-    a_team: str(get('a_team')),
-    a_sup: str(get('a_sup') ?? raw['a/a_sup']),
+    a_date: str(raw['a/a_date']),
+    a_team: str(raw['a/a_team']),
+    a_sup: str(raw['a/a_sup']),
     a_state: state,
-    a_lga: str(get('a_lga')),
-    a_repl: str(get('a_repl')) as 'yes' | 'no',
-    a_repl_of: str(get('a_repl_of')) || null,
-    a_repl_why: str(get('a_repl_why')) || null,
-    a_fac: str(get('a_fac')),
+    a_lga: str(raw['a/a_lga']),
+    a_repl: str(raw['a/a_repl']) as 'yes' | 'no',
+    a_repl_of: str(raw['a/a_repl_of']) || null,
+    a_repl_why: str(raw['a/a_repl_why']) || null,
+    a_fac: str(raw['a/a_fac']),
     pre_cat: str(raw['a/pre_cat']),
     pre_fname: str(raw['a/pre_fname']),
     pre_imam_name: str(raw['a/pre_imam_name']),
     pre_dhis2_name: str(raw['a/pre_dhis2_name']),
-    pre_ward: str(raw['a/pre_ward']),
-    pre_stratum: str(get('pre_stratum')),
-    pre_weight: num(get('pre_weight')),
-    pre_frame_no: str(get('pre_frame_no')),
-    pre_sc: str(raw['a/pre_sc']),
+    pre_ward: str(raw['a/a_ward']),
+    pre_stratum: str(raw['a/pre_stratum']),
+    pre_weight: num(raw['a/pre_weight']),
+    pre_frame_no: str(raw['a/pre_frame_no']),
+    pre_sc: str(raw['a/pre_otp']),
     a_type: str(raw['a/a_type']),
     a_gps: str(raw['a/a_gps']) || null,
-    a_lat: num(get('a_lat')),
-    a_lon: num(get('a_lon')),
+    a_lat: num(raw['a/a_lat']),
+    a_lon: num(raw['a/a_lon']),
     a_photo_taken: str(raw['a/a_photo_taken']) as 'Yes' | 'No',
     a_lead: str(raw['a/a_lead']),
     a_arrive: str(raw['a/a_arrive']),
+
     b1: str(raw['b/b1']),
-    b2: str(raw['b/b2']),
-    b5: str(raw['b/b5']),
-    b9: num(raw['b/b9']),
-    b18: str(raw['b/b18']),
-    b19: str(raw['b/b19']),
-    b20: str(raw['b/b20']),
-    b27: (str(raw['b/b27']) || null) as FacilityRecord['b27'],
-    c_tot_rep: num(get('c_tot_rep')),
-    c_tot_ver: num(get('c_tot_ver')),
-    c_tot_imam: num(raw['c_tot_imam']),
-    c_tot_dhis2: num(raw['c_tot_dhis2']),
-    c_rate: num(get('c_rate')),
-    c_rate_d: num(raw['c_rate_d']),
-    c_months_avail: num(get('c_months_avail')),
-    c_tot_cured: num(raw['c_tot_cured']),
-    c_tot_def: num(raw['c_tot_def']),
-    c_tot_died: num(raw['c_tot_died']),
-    c_exits: num(raw['c_exits']),
-    c_cure: num(get('c_cure')),
-    c_stock_months: num(get('c_stock_months')),
-    c_stock_adm: num(raw['c_stock_adm']),
-    c_norutf_adm: num(raw['c_norutf_adm']),
-    c_rrec: num(raw['c_rrec']),
-    c_rdisp: num(raw['c_rdisp']),
-    d_rev: num(get('d_rev')),
-    d_valid: num(get('d_valid')),
-    d_invalid: num(raw['d_invalid']),
-    d_unver: num(raw['d_unver']),
-    d_alt: num(raw['d_alt']),
-    d_comorb: num(raw['d_comorb']),
+    b2: str(raw['b/b_more/b2']),
+    b5: str(raw['b/b_more/b5']),
+    b9: num(raw['b/b_more/b9']),
+    b18: str(raw['b/b_more/b18']),
+    b19: str(raw['b/b_more/b19']),
+    b20: str(raw['b/b_more/b20']),
+    b27: (str(raw['b/b_more/b27']) || null) as FacilityRecord['b27'],
+
+    c_tot_rep: num(raw['c/c_tot_rep']),
+    c_tot_ver: num(raw['c/c_tot_ver']),
+    c_tot_imam: num(raw['c/c_tot_imam']),
+    c_tot_dhis2: num(raw['c/c_tot_dhis2']),
+    c_rate: num(raw['c/c_rate']),
+    c_rate_d: num(raw['c/c_rate_d']),
+    c_months_avail: num(raw['c/c_months_avail']),
+    c_tot_cured: num(raw['c/c_tot_cured']),
+    c_tot_def: num(raw['c/c_tot_def']),
+    c_tot_died: num(raw['c/c_tot_died']),
+    c_exits: num(raw['c/c_exits']),
+    c_cure: num(raw['c/c_cure']),
+    c_stock_months: num(raw['c/c_stock_months']),
+    c_stock_adm: num(raw['c/c_stock_adm']),
+    c_norutf_adm: num(raw['c/c_norutf_adm']),
+    c_rrec: num(raw['c/c_rrec']),
+    c_rdisp: num(raw['c/c_rdisp']),
+
+    d_rev: num(raw['d/d_rev']),
+    d_valid: num(raw['d/d_valid']),
+    d_invalid: num(raw['d/d_invalid']),
+    d_unver: num(raw['d/d_unver']),
+    d_alt: num(raw['d/d_alt']),
+    d_comorb: num(raw['d/d_comorb']),
+
     e1: str(raw['e/e1']),
-    e_acc: num(get('e_acc')),
-    e_courses: num(get('e_courses')),
-    e_unexp: num(get('e_unexp')),
-    e_match: (str(get('e_match')) || null) as 'yes' | 'no' | null,
+    e_acc: num(raw['e/e_acc']),
+    e_courses: num(raw['e/e_courses']),
+    e_unexp: num(raw['e/e_unexp']),
+    e_match: (str(raw['e/e_match']) || null) as 'yes' | 'no' | null,
     e_phys: num(raw['e/e_phys']),
+
     h_gap: num(raw['h/h_gap']),
     h_gap_v: num(raw['h/h_gap_v']),
-    h_mech: Array.isArray(raw['h/h_mech']) ? raw['h/h_mech'] as string[] : str(raw['h/h_mech']).split(' ').filter(Boolean),
-    h_dq: (str(get('h_dq')) || null) as FacilityRecord['h_dq'],
-    h_func_cls: (str(get('h_func_cls')) || null) as FacilityRecord['h_func_cls'],
+    h_mech: mechArr,
+    h_dq: (str(raw['h/h_dq']) || null) as FacilityRecord['h_dq'],
+    h_func_cls: (str(raw['h/h_func_cls']) || null) as FacilityRecord['h_func_cls'],
     h_anom: str(raw['h/h_anom']) || null,
-    a_outcome: str(get('a_outcome')) as FacilityRecord['a_outcome'],
+
+    a_outcome: str(raw['z/a_outcome']) as FacilityRecord['a_outcome'],
     z_gps: str(raw['z/z_gps']) || null,
+
     p_spc: num(raw['p_spc']) ?? 150,
-    p_course: num(raw['p_course']) ?? 140,
+    p_course: num(raw['p_course']) ?? 150,
     p_wastage: num(raw['p_wastage']) ?? 0.05,
+
     monthlyData,
     patientRecords,
   }
 }
 
 function mapCaregiver(raw: Record<string, unknown>): CaregiverRecord {
-  const get = (canonical: string) => {
-    const mapping = CAREGIVER_FIELDS.find(f => f.canonical === canonical)
-    return mapping ? resolve(raw, mapping) : raw[canonical]
-  }
-
-  const state = str(get('a_state')).toLowerCase() as 'kano' | 'kaduna'
+  const state = str(raw['a/a_state']).toLowerCase() as 'kano' | 'kaduna'
 
   return {
     _id: Number(raw._id) || 0,
     _uuid: str(raw._uuid),
     _submission_time: str(raw._submission_time),
-    _version: str(raw._version),
+    _version: str(raw.__version__ ?? raw._version),
     start: str(raw.start),
     end: str(raw.end),
-    a_date: str(get('a_date')),
-    a_team: str(get('a_team')),
+    a_date: str(raw['a/a_date']),
+    a_team: str(raw['a/a_team']),
     a_state: state,
-    a_lga: str(get('a_lga')),
+    a_lga: str(raw['a/a_lga']),
     a_repl: str(raw['a/a_repl']) as 'yes' | 'no',
-    a_fac: str(get('a_fac')),
+    a_fac: str(raw['a/a_fac']),
     pre_fname: str(raw['a/pre_fname']),
-    c_cat: str(get('c_cat')) as CaregiverRecord['c_cat'],
-    c_no: num(get('c_no')),
-    c_pid: str(get('c_pid')),
-    c_contact: str(get('c_contact')) as CaregiverRecord['c_contact'],
+    c_cat: str(raw['g/c_cat']) as CaregiverRecord['c_cat'],
+    c_no: num(raw['g/c_no']),
+    c_pid: str(raw['g/c_pid']),
+    c_contact: str(raw['g/c_contact']) as CaregiverRecord['c_contact'],
     c_meth: str(raw['g/c_meth']) || null,
-    c_consent: (str(get('c_consent')) || null) as 'yes' | 'no' | null,
+    c_consent: (str(raw['g/c_consent']) || null) as 'yes' | 'no' | null,
     m_rel: str(raw['m/m_rel']) || null,
     m_age: num(raw['m/m_age']),
     m_edu: str(raw['m/m_edu']) || null,
     m_u5: num(raw['m/m_u5']),
-    ch_age: num(raw['e/ch_age']),
-    ch_sex: (str(raw['e/ch_sex']) || null) as 'm' | 'f' | null,
-    ch_adm_date: str(raw['e/ch_adm_date']) || null,
-    ch_admtype: str(raw['e/ch_admtype']) || null,
-    ch_ref: str(raw['e/ch_ref']) || null,
-    ch_where: str(raw['e/ch_where']) || null,
-    ch_disch: str(raw['e/ch_disch']) || null,
-    c_attend: (str(get('c_attend')) || null) as 'yes' | 'no' | null,
-    c_cont: (str(get('c_cont')) || null) as CaregiverRecord['c_cont'],
+    ch_age: num(raw['ch/ch_age']),
+    ch_sex: (str(raw['ch/ch_sex']) || null) as 'm' | 'f' | null,
+    ch_adm_date: str(raw['ch/ch_adm_date']) || null,
+    ch_admtype: str(raw['ch/ch_admtype']) || null,
+    ch_ref: str(raw['ch/ch_ref']) || null,
+    ch_where: str(raw['ch/ch_where']) || null,
+    ch_disch: str(raw['ch/ch_disch']) || null,
+    c_attend: (str(raw['v/c_attend']) || null) as 'yes' | 'no' | null,
+    c_cont: (str(raw['v/c_cont']) || null) as CaregiverRecord['c_cont'],
     c_ref_completed: (str(raw['v/c_ref_completed']) || null) as 'yes' | 'no' | 'dk' | null,
-    c_bar: str(get('c_bar')) || null,
-    c_cost: num(get('c_cost')),
+    c_bar: str(raw['v/c_bar']) || null,
+    c_cost: num(raw['v/c_cost']),
     c_untr: (str(raw['v/c_untr']) || null) as 'yes' | 'no' | null,
     c_muac: num(raw['v/c_muac']),
   }
