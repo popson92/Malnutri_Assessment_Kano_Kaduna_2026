@@ -3,7 +3,7 @@ import { LGA_MAPPINGS, SAMPLING_TARGETS } from '@/config/geo'
 import { REFERENCE_MONTHS } from '@/config/fieldMappings'
 
 const rng = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
-const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
 const uuid = () => crypto.randomUUID()
 
 const teams = ['KN-01', 'KN-02', 'KN-03', 'KN-04', 'KN-05', 'KD-01', 'KD-02', 'KD-03', 'KD-04', 'KD-05']
@@ -209,8 +209,8 @@ export function generateDevCaregivers(): CaregiverRecord[] {
       const lga = pick(stateLgas)
       const teamPrefix = state === 'kano' ? 'KN' : 'KD'
       const facCode = `${state.substring(0, 2).toUpperCase()}_${lga.koboCode}_${String(rng(1, 20)).padStart(3, '0')}`
-      const contact = pick(contacts)
-      const consent = contact === 'yes' ? (Math.random() > 0.05 ? 'yes' : 'no') as const : null
+      const contact: 'yes' | 'no' | 'untraceable' = pick(contacts)
+      const consent: 'yes' | 'no' | null = contact === 'yes' ? (Math.random() > 0.05 ? 'yes' : 'no') : null
 
       caregivers.push({
         _id: id++,

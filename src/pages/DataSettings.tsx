@@ -94,7 +94,7 @@ export default function DataSettings() {
             </div>
             <div className="flex justify-between py-1 border-b border-border/50">
               <span className="text-muted">Wastage allowance</span>
-              <span className="font-medium">{(DEFAULT_PARAMS.wastageRate * 100).toFixed(0)}%</span>
+              <span className="font-medium">{(DEFAULT_PARAMS.wastageAllowance * 100).toFixed(0)}%</span>
             </div>
           </div>
         </SectionCard>
